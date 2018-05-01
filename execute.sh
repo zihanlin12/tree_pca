@@ -1,0 +1,2 @@
+#!/bin/bash
+python simulation_work.py --K 1;python decile_simulation.py;python get_tree_portfolio.py;python get_sharpe.py --File_name 'simulated_portfolio';python get_sharpe.py --File_name 'simulated_decile_portfolio'
