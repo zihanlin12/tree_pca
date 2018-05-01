@@ -3,6 +3,7 @@ import numpy as np
 import os
 import scipy.linalg as la
 import argparse
+import scipy.io
 
 parser = argparse.ArgumentParser(description='Process Raw Data')
 parser.add_argument('--RP', default=1, help='Whether use Risk Premium PCA')
@@ -10,10 +11,14 @@ parser.add_argument('--Corr', default= 1, help = 'Whether use correlation matrix
 parser.add_argument('--Time', default= 1, help= 'Whether use time dimension or not')
 parser.add_argument('--delta', default= 600, help = 'The number of portfolios left in each factor')
 parser.add_argument('--Shrink', default= 0, help = 'Whether you want to apply the proxy factor or not')
+parser.add_argument('--File_name', default='tree_without_missing', help= 'The portfolio that you want to get the sharpe of')
 args = parser.parse_args()
 
 current_dir= os.getcwd()
-data_dir= current_dir+'/npz_data/simulated_portfolio.npz'
+File_name= args.File_name
+data_dir= current_dir+'/npz_data/'+File_name+'.npz'
+# data_dir=current_dir+'/npz_data/tree_without_missing.npz'
+# data_dir=current_dir+'/npz_data/simulated_portfolio.npz'
 # data_dir= current_dir+'/npz_data/Fan_portfolio.npz'
 # data_dir= current_dir+'/npz_data/simulated_decile_portfolio.npz'
 data= np.load(data_dir)
@@ -73,9 +78,11 @@ def easy_sharpe(optimal_return):
         mean_optimal= np.mean(optimal_return)
         cov_optimal= np.cov(optimal_return)
         return abs(mean_optimal)/np.sqrt(cov_optimal)
-K= 5
+K= 1
 optimal_sharpe= np.zeros((K))
 for i in range(K):
     print (args.Shrink)
     optimal_sharpe[i]= easy_sharpe(compute_sharpe(i+1, portfolio, int(args.RP), int(args.Corr), int(args.Time), int(args.delta), int(args.Shrink)))
 print (optimal_sharpe)
+save_name='./data/Sharpe'+File_name+'.mat'
+scipy.io.savemat(save_name,mdict= {'Sharpe':optimal_sharpe})

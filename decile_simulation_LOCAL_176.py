@@ -23,4 +23,3 @@ data= np.load('./npz_data/simulated_data.npz')
 returns= data['return_data']
 characteristics= data['characteristics']
 form_portfolio(returns, characteristics)
-print ('This file has been saved.')

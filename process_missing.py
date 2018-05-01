@@ -46,18 +46,15 @@ for i in range(idx_start+1, idx_end):
 
 file_dic= {}
 for file in File_name:
-	# file_msg = './Jason_data/%s.csv' % (file)
 	file_msg = './Characteristics/%s.csv' % (file)
 	print (file_msg)
 	file_data= pd.read_csv(file_msg, engine='python')
-	# print (file_data)
 	file_dic[file_msg]= file_data
 	firm_name= file_data.axes[1][1:]
 	dates= file_data['Date']
 	dates= dates//100
 	dates_list= list(dates)
 	time_idx= {date:i for i, date in enumerate(dates_list)}
-
 	firm_name_list= list(firm_name)
 	for i in range(len(firm_name_list)):
 		name= firm_name_list[i]
@@ -70,19 +67,14 @@ for file in File_name:
 	count= 0
 	for i in range(idx_start, idx_end-1):
 		data_i= file_data.iloc[i+1][1:]
-		# print (len(idx_all_time[count]))
 		possible_name_copy= copy.deepcopy(idx_all_time[count])
 		for j in idx_all_time[count]:
 			firm_name= firm_names[j]
 			idx= firm_idx.get(firm_name,-999)
-			# print (np.isnan(data_i[idx]))
 			if np.isnan(data_i[idx]) or idx == -999:
 				possible_name_copy.remove(j)
-				# print ('I have been here')
 		idx_all_time[count]= possible_name_copy
-		# print (len(idx_all_time[count]))
 		test_list= [firm_idx.get(firm_names[k], -999)+1 for k in idx_all_time[count]]
-		# print (file_data.iloc[i+1][test_list])
 		count+=1 
 
 N= min([len(idx_all_time[count]) for count in range(len(idx_all_time))])
@@ -91,16 +83,11 @@ print (N)
 data= np.zeros((idx_end-idx_start-1, N, len(File_name)+1))
 count= 0
 for i in range(idx_start, idx_end-1):
-	# print (i)
 	idx_i= random.sample(idx_all_time[count], N)
 	idx_return= [k+1 for k in idx_i]
-	# print (return_data.iloc[i+2][idx_return])
 	data[count, :, 0]= return_data.iloc[i+2][idx_return]
 	for j, file in enumerate(File_name):
-		# file_msg= './Jason_data/%s.csv'%(file)
 		file_msg= './Characteristics/%s.csv'%(file)
-		# print (file_msg)
-		# file_data= pd.read_csv(file_msg)
 		file_data= file_dic[file_msg]
 		firm_name= file_data.axes[1][1:]
 		firm_name_list= list(firm_name)
@@ -110,12 +97,9 @@ for i in range(idx_start, idx_end-1):
 		firm_idx= {firm:n for n, firm in enumerate(firm_name_list)}
 		firm_j= [firm_names[k] for k in idx_i]
 		idx_file= [firm_idx.get(k, -999)+1 for k in firm_j]
-		# print (file_data.iloc[i+1][idx_file])
 		data[count, :, j+1]= file_data.iloc[i+1][idx_file]
 	count+= 1
 path_target = './npz_data/processed_data.npz'
 np.savez(path_target, data= data)
-# path_target = './npz_data/processed_data.csv'
-# np.savetxt(path_target, data, delimiter=",") 
 	
 

@@ -22,5 +22,9 @@ def form_portfolio(returns, chara_data):
 data= np.load('./npz_data/simulated_data.npz')
 returns= data['return_data']
 characteristics= data['characteristics']
+<<<<<<< HEAD
+form_portfolio(returns, characteristics)
+=======
 form_portfolio(returns, characteristics)
 print ('This file has been saved.')
+>>>>>>> 797e27e15433f71d373eb7d295bb7c2aa97978d5

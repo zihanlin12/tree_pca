@@ -1,5 +1,3 @@
-# Perform the simulated estimator.
-
 import numpy as np
 import argparse
 import math
@@ -13,6 +11,7 @@ parser.add_argument('--sigma_F_2', default= 0.03, help = 'Whether use correlatio
 parser.add_argument('--K', default= 4, help = 'Whether use correlation matrix', type= int)
 parser.add_argument('--L', default= 3, help = 'The number of partitions in each coordinate', type= int)
 parser.add_argument('--random', default= 1, help= 'Whether we are simulating the ', type= str)
+parser.add_argument('--sigma_2', default= 10, help= 'Whether we are simulating the ', type= float)
 args = parser.parse_args()
 
 K= int(args.K)
@@ -36,37 +35,70 @@ def get_factor(T, K, sigma_F_2):
 	diag= diag[0:K]
 	diag_F= np.sqrt(np.diag(diag))
 	Factor= np.random.randn(T, K).dot(diag_F)
-	Sharpe= np.array([0.12,0.1,0.3,0.5])
+	Sharpe= np.array([5,0.1,0.3,0.5])
 	Sharpe= Sharpe[0:K]
 	print (np.mean(Factor, axis= 0))
 	Factor= Factor+ Sharpe.dot(diag_F)
 	return Factor
 
-def get_characteristics(T, N, M, rho):
-	base= np.random.randn(T, N, M)
+def get_characteristics(T, N, M, rho, sigma_2):
+	base= sigma_2*np.random.randn(T, N, M)
 	corre= np.diag(rho*np.ones((M-1)), 1)+ np.identity(M)
-	return np.matmul(base, corre)
+	for i in range(T):
+		base[i,:,:]= base[i,:,:].dot(corre)
+	return base
 
-def get_individual_loading(x):
+def get_individual_loading(x, rho, B, sigma_2, partition):
 	M= len(x)
 	output= np.zeros((K))
-	for i in range(K):
-		output[i]= x[0]*x[1]
+	basis= return_basis_matrix(x, rho, sigma_2, partition)
+	for i in range(K):		
+		output[i]= np.sum(basis*B)
 	return output
 
-def get_loading(characteristics):
+def get_coefficient():
+	return np.random.rand(10)
+
+def get_partition(sigma_2, N, M, rho):
+	base= np.random.randn(N, M)
+	corre= sigma_2*np.diag(rho*np.ones((M-1)), 1)+ np.identity(M)
+	base= base.dot(corre)
+	return np.median([base[k,1] for k in range(N) if base[k,0]>0])
+
+
+
+def return_basis_matrix(x, rho, sigma_2, partition):
+	# coef= rho/np.sqrt(2*math.pi)
+	coef= partition
+	basis_matrix= np.zeros(10)
+	basis_matrix[0]= 1 if x[0]<0 and x[1]>0 else 0
+	basis_matrix[1]= 1 if x[0]>-coef and x[0]<0 and x[1]<-coef else 0
+	basis_matrix[2]= 1 if x[0]<-coef and x[1]>-coef and x[1]<0 else 0
+	basis_matrix[3]= 1 if x[0]>-coef and x[0]<0 and x[1]>-coef and x[1]<0 else 0
+	basis_matrix[4]= 1 if x[0]<-coef and x[1]<-coef else 0
+	basis_matrix[5]= 1 if x[0]>0 and x[1]<0 else 0
+	basis_matrix[6]= 1 if x[0]<coef and x[0]>0 and x[1]>coef else 0
+	basis_matrix[7]= 1 if x[0]>coef and x[1]<coef and x[1]>0 else 0
+	basis_matrix[8]= 1 if x[0]<coef and x[0]>0 and x[1]<coef and x[1]>0 else 0
+	basis_matrix[9]= 1 if x[0]>coef and x[1]>coef else 0
+	return basis_matrix
+
+def get_loading(characteristics, rho, sigma_2, partition):
 	T, N, M= characteristics.shape
 	output= np.zeros((T, K, N))
+	B= get_coefficient()
 	for i in range(T):
 		for j in range(N):
-			output[i,:,j]= get_individual_loading(characteristics[i,j,:])
-		q, _= np.linalg.qr(output[i,:,:].T, mode= 'reduced')
-		output[i,:,:]= q.T* np.sqrt(N)
+			output[i,:,j]= get_individual_loading(characteristics[i,j,:], rho, B, sigma_2, partition)
+		# q, _= np.linalg.qr(output[i,:,:].T, mode= 'reduced')
+		# output[i,:,:]= q.T* np.sqrt(N)
 	return output
 
-def get_return(T, N, M, rho, sigma_F_2, K, L, random):
-	characteristics= get_characteristics(T, N , M, rho)
-	loading= get_loading(characteristics)
+def get_return(T, N, M, rho, sigma_F_2, K, L, random, sigma_2):
+	characteristics= get_characteristics(T, N , M, rho, sigma_2)
+	partition= get_partition(sigma_2, 1000000, 2, rho)
+	print (partition)
+	loading= get_loading(characteristics, rho, sigma_2, partition)
 	factor= get_factor(T, K, sigma_F_2)
 	print (np.mean(factor, axis= 0))
 	factor_expand= np.expand_dims(factor, 1)
@@ -79,12 +111,10 @@ def get_return(T, N, M, rho, sigma_F_2, K, L, random):
 	return_data= return_data+ noise
 	return return_data, characteristics, factor
 
-return_data, characteristics, factor= get_return(int(args.T), int(args.N), int(args.M), args.rho, args.sigma_F_2, args.K, args.L, args.random)
+return_data, characteristics, factor= get_return(int(args.T), int(args.N), int(args.M), args.rho, args.sigma_F_2, args.K, args.L, args.random, args.sigma_2)
 print (return_data.shape)
 print (characteristics.shape)
 path= './npz_data/simulated_data'
 np.savez(path, return_data= return_data, characteristics= characteristics)
 path= './npz_data/simulated_factor'
 np.savez(path, factor= factor)
-
-
